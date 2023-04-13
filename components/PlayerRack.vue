@@ -22,18 +22,16 @@
           class="flex flex-wrap tiles rack-bg border-t-2 border-b-2 border-gray-200 h-42 tiles"
         >
           <div
-          v-for="(tile, index) in section1Tiles"
+            v-for="(tile, index) in section1Tiles"
             :key="index"
             class="tile-container flex w-14 h-20 border-dashed border-1 border-indigo-600"
+            :data-index="index"
           >
             <Tile
               v-if="tile.number"
               :number="tile.number"
               :color="tile.color"
-              @dragstart="dragStart(i, $event)" 
-              @dragover.prevent 
-              @dragenter="dragEnter"
-              @dragleave="dragLeave" @dragend="dragEnd"
+              @dragover.prevent
               @drop="onDrop(i, $event)"
               @mousemove="onMouseMove($event)"
               @mousedown="onMouseDown($event, index)"
@@ -65,14 +63,10 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, defineProps } from "vue";
+import { ref, defineProps } from "vue";
 
 const props = defineProps({
   tiles: Array,
-});
-
-const tiles = computed(() => {
-  return props.tiles;
 });
 
 const section1Ref = ref(null);
@@ -90,7 +84,7 @@ let offsetY = 0;
 const onMouseDown = (event, index) => {
   event.preventDefault();
   if (!draggedTile) {
-    draggedTileIndex = index
+    draggedTileIndex = index;
     draggedTile = event.target.closest(".tile");
     offsetX = event.clientX - draggedTile.getBoundingClientRect().left;
     offsetY = event.clientY - draggedTile.getBoundingClientRect().top;
@@ -144,29 +138,18 @@ const onMouseMove = (event) => {
   }
 };
 
-const moveAt = (event) => {
-  if (!draggedTile) return;
-  draggedTile.style.left = event.pageX - offsetX + "px";
-  draggedTile.style.top = event.pageY - offsetY + "px";
+const onMouseUp = (event) => {
+  onDrop(event);
 };
 
 const onDrop = (event) => {
   event.preventDefault();
-  
-  console.log(event)
 
   if (!draggedTile) return;
-
-  const target = event.target.closest(".tile-container");
-
-
-  if (!target) return;
 
   let nearestDropArea = null;
   let minDistance = Number.MAX_VALUE;
   const dropAreas = document.querySelectorAll(".tile-container");
-
-
 
   for (const dropArea of dropAreas) {
     if (!section1Ref.value.contains(dropArea)) continue;
@@ -187,9 +170,31 @@ const onDrop = (event) => {
 
   if (nearestDropArea) {
     const targetIndex = parseInt(nearestDropArea.dataset.index);
-    const sourceIndex = section1Tiles.value.findIndex(
-      (tile) => tile === draggedTile
-    );
+    const sourceIndex = draggedTileIndex;
+    const existingTile = nearestDropArea.querySelector(".tile");
+    if (existingTile) {
+      if (draggedTile.getBoundingClientRect().top >= existingTile.getBoundingClientRect().top) {
+        // Dragged tile is already on top of another tile, return it to its original position
+        leaveTileOnLastPos();
+        return;
+      }
+      const nextEmptyContainer = findNextEmptyContainer(dropAreas, targetIndex, draggedTile, event.clientX);
+      if (nextEmptyContainer) {
+        // Move the existing tile to the next empty container
+        nextEmptyContainer.appendChild(existingTile);
+      } else {
+        // No empty container found, return the dragged tile to its original position
+        leaveTileOnLastPos();
+        return;
+      }
+    }
+
+    const targetTile = section1Tiles.value[targetIndex];
+    if (targetTile.number || targetTile.color) {
+      // There is already a tile in the target tile container, don't swap
+      leaveTileOnLastPos();
+      return;
+    }
 
     // Swap tiles
     [section1Tiles.value[sourceIndex], section1Tiles.value[targetIndex]] = [
@@ -201,10 +206,49 @@ const onDrop = (event) => {
     nearestDropArea.appendChild(draggedTile);
   }
 
-  onMouseUp(event);
+  leaveTileOnLastPos();
 };
 
-const onMouseUp = (event) => {
+
+const findNextEmptyContainer = (dropAreas, index, existingTile, mouseX) => {
+  const existingTileRect = existingTile.getBoundingClientRect();
+  const existingTileCenterX = existingTileRect.left + existingTileRect.width / 2;
+
+  // Check for empty container on the left side
+  if (mouseX > existingTileCenterX) {
+    for (let i = index - 1; i >= 0; i--) {
+      const container = dropAreas[i];
+      if (!container.querySelector(".tile")) {
+        return container;
+      }
+    }
+  }
+
+  // Check for empty container on the right side
+  if (mouseX <= existingTileCenterX) {
+    for (let i = index + 1; i < dropAreas.length; i++) {
+      const container = dropAreas[i];
+      if (!container.querySelector(".tile")) {
+        return container;
+      }
+    }
+  }
+
+  return null;
+};
+
+
+
+
+
+
+const moveAt = (event) => {
+  if (!draggedTile) return;
+  draggedTile.style.left = event.pageX - offsetX + "px";
+  draggedTile.style.top = event.pageY - offsetY + "px";
+};
+
+const leaveTileOnLastPos = () => {
   if (!draggedTile) return;
   draggedTile.style.zIndex = "";
   draggedTile.classList.remove("dragging-active");
@@ -215,10 +259,4 @@ const onMouseUp = (event) => {
     dropArea.classList.remove("highlight");
   }
 };
-
-const  dragStart = (index, event) => {
-  event.dataTransfer.setData('Text', index)
-}
-
-
 </script>
