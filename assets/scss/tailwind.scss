@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@900&display=swap');
+
+.dark-area {
+  @apply flex justify-center h-8 rounded-md border-2 border-gray-800 bg-black opacity-75 shadow-inner text-white;
+}
+
+.dark-board-area {
+  @apply flex rounded-md border-2 border-gray-800 bg-gray-800 shadow-inner opacity-50;
+}
+
+.table-side {
+  @apply bg-gradient-to-r from-gray-500 to-gray-200 w-4 h-20 flex justify-center;
+}
+.rack-bg {
+  background-image: url("/images/wood-1.png");
+  background-size: contain;
+}
+
+.drag {
+  opacity: 0.4;
+  cursor: move;
+}
+
+.dragging {
+  cursor: grabbing;
+}
+.shadow-inner {
+  box-shadow: inset 10px 10px 10px #eae8e4;
+}
+.tile-bg {
+  background-image: url("/images/tile.png");
+  background-size: cover;
+}
+.tiles {
+  flex-wrap: wrap;
+}
+
+.highlight {
+  border-color: rgba(187, 105, 6, 0.949);
+  background-color: rgba(187, 105, 6, 0.949);
+}
+
+
+

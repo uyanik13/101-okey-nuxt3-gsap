@@ -1,0 +1,146 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./components/**/*.{js,vue,ts}",
+    "./layouts/**/*.vue",
+    "./pages/**/*.vue",
+    "./plugins/**/*.{js,ts}",
+    "./nuxt.config.{js,ts}",
+    "./app.vue",
+  ],
+  darkMode: 'class',
+  important: true,
+  theme: {
+      screens: {
+          xs: "540px",
+          sm: '640px',
+          md: '768px',
+          lg: '1024px',
+          xl: '1280px',
+          '2xl': '1536px',
+      },
+      fontFamily: {
+          'merri': ['Merriweather', 'serif'],
+      },
+      container: {
+          center: true,
+          padding: {
+              DEFAULT: '12px',
+              sm: '1rem',
+              lg: '45px',
+              xl: '5rem',
+              '2xl': '10rem',
+              '3xl': '15rem',
+              '4xl': '20rem',
+              'tile': '22rem',
+          },
+
+      },
+      extend: {
+          colors: {
+              'dark': '#3c4858',
+              'black': '#161c2d',
+              'dark-footer': '#192132',
+              primary: '#2c3d8d',
+              secondary: '#e33862',
+          },
+
+          boxShadow: {
+              sm: '0 2px 4px 0 rgb(60 72 88 / 0.15)',
+              DEFAULT: '0 0 3px rgb(60 72 88 / 0.15)',
+              md: '0 5px 13px rgb(60 72 88 / 0.20)',
+              lg: '0 10px 25px -3px rgb(60 72 88 / 0.15)',
+              xl: '0 20px 25px -5px rgb(60 72 88 / 0.1), 0 8px 10px -6px rgb(60 72 88 / 0.1)',
+              '2xl': '0 25px 50px -12px rgb(60 72 88 / 0.25)',
+              inner: 'inset 0 2px 4px 0 rgb(60 72 88 / 0.05)',
+              testi: '2px 2px 2px -1px rgb(60 72 88 / 0.15)',
+          },
+
+          spacing: {
+            px: '1px',
+            0: '0',
+            0.5: '0.125rem',
+            1: '0.25rem',
+            1.5: '0.375rem',
+            2: '0.5rem',
+            2.5: '0.625rem',
+            3: '0.75rem',
+            3.5: '0.875rem',
+            3.75: '0.925rem',
+            4: '1rem',
+            4.5: '1.15rem',
+            5: '1.25rem',
+            5.5: '1.40rem',
+            6: '1.5rem',
+            7: '1.75rem',
+            8: '2rem',
+            9: '2.25rem',
+            10: '2.5rem',
+            11: '2.75rem',
+            12: '3rem',
+            14: '3.5rem',
+            16: '4rem',
+            20: '5rem',
+            24: '6rem',
+            28: '7rem',
+            32: '8rem',
+            36: '9rem',
+            40: '10rem',
+            42: '10.5rem',
+            44: '11rem',
+            48: '12rem',
+            52: '13rem',
+            56: '14rem',
+            60: '15rem',
+            64: '16rem',
+            72: '18rem',
+            80: '20rem',
+            92: '22rem',
+            94: '24.2rem',
+            96: '26.2rem'
+          },
+
+          maxWidth: ({
+              theme,
+              breakpoints
+          }) => ({
+              '1200': '71.25rem',
+              '992': '60rem',
+              '768': '45rem',
+          }),
+
+          zIndex: {
+              1: '1',
+              2: '2',
+              3: '3',
+              999: '999',
+          },
+          brightness: {
+            25: '.25',
+            50: '.50',
+            75: '.75',
+            100: '1.00',
+            125: '1.25',
+            175: '1.75',
+          },
+          borderWidth: {
+            default: '1px',
+            0: '0',
+            1: '1px',
+            2: '2px',
+            3: '3px',
+            4: '4px',
+            5: '5px',
+            6: '6px',
+            7: '7px',
+            8: '8px',
+            9: '9px',
+            10: '10px'
+          },
+      },
+  },
+  plugins: [
+    require('tailwindcss/colors'),
+    require('tailwindcss/plugin')
+  ],
+}
