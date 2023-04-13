@@ -27,8 +27,7 @@
             class="tile-container flex w-14 h-20 border-dashed border-1 border-indigo-600"
             :data-index="index"
           >
-            <Tile
-              v-if="tile.number"
+          <!-- <Tile
               :number="tile.number"
               :color="tile.color"
               @dragover.prevent
@@ -37,8 +36,7 @@
               @mousedown="onMouseDown($event, index)"
               @mouseup="onMouseUp($event, index)"
               draggable="true"
-              :class="{ dragging: draggedTileIndex === index }"
-            />
+            /> -->
           </div>
         </div>
 
@@ -63,28 +61,48 @@
   </div>
 </template>
 <script setup>
-import { ref, defineProps } from "vue";
+import { ref, defineProps, computed } from "vue";
+import tiles from "@/assets/fixtures/tiles.json";
+import Tile from '@/components/Tile.vue'
+import { defineComponent } from "vue";
 
-const props = defineProps({
-  tiles: Array,
-});
+// const props = defineProps({
+//   tiles: Array,
+// });
 
 const section1Ref = ref(null);
 
 const section1Tiles = ref([
-  ...props.tiles.slice(0, 21),
+  ...tiles,
   ...Array(11).fill({ number: null, color: null }),
 ]);
 
+const targetTileIndex = ref(null);
+const targetTile = computed(() => {
+  if (targetTileIndex.value === null) {
+    return null;
+  }
+  return section1Tiles.value[targetTileIndex.value];
+});
+
+const existingTileIndex = ref(null);
+const existingTile = computed(()=> {
+  if (existingTileIndex.value === null) {
+    return null;
+  }
+  return section1Tiles.value[existingTileIndex.value];
+})
+
+
 let draggedTile = null;
-let draggedTileIndex = null;
+let draggedTileData = null;
 let offsetX = 0;
 let offsetY = 0;
 
 const onMouseDown = (event, index) => {
   event.preventDefault();
   if (!draggedTile) {
-    draggedTileIndex = index;
+    draggedTileData = section1Tiles.value[index];
     draggedTile = event.target.closest(".tile");
     offsetX = event.clientX - draggedTile.getBoundingClientRect().left;
     offsetY = event.clientY - draggedTile.getBoundingClientRect().top;
@@ -103,7 +121,6 @@ const onMouseDown = (event, index) => {
 const onMouseMove = (event) => {
   if (!draggedTile) return;
   moveAt(event, event);
-
   const dropAreas = document.querySelectorAll(".tile-container");
 
   let nearestDropArea = null;
@@ -138,11 +155,11 @@ const onMouseMove = (event) => {
   }
 };
 
-const onMouseUp = (event) => {
-  onDrop(event);
+const onMouseUp = (event, index) => {
+  onDrop(event, index);
 };
 
-const onDrop = (event) => {
+const onDrop = (event, index) => {
   event.preventDefault();
 
   if (!draggedTile) return;
@@ -157,6 +174,7 @@ const onDrop = (event) => {
     const dropAreaRect = dropArea.getBoundingClientRect();
     const dropAreaCenterX = dropAreaRect.left + dropAreaRect.width / 2;
     const dropAreaCenterY = dropAreaRect.top + dropAreaRect.height / 2;
+
     const distance = Math.sqrt(
       Math.pow(event.clientX - dropAreaCenterX, 2) +
         Math.pow(event.clientY - dropAreaCenterY, 2)
@@ -168,51 +186,94 @@ const onDrop = (event) => {
     }
   }
 
+
   if (nearestDropArea) {
-    const targetIndex = parseInt(nearestDropArea.dataset.index);
-    const sourceIndex = draggedTileIndex;
-    const existingTile = nearestDropArea.querySelector(".tile");
-    if (existingTile) {
-      if (draggedTile.getBoundingClientRect().top >= existingTile.getBoundingClientRect().top) {
-        // Dragged tile is already on top of another tile, return it to its original position
-        leaveTileOnLastPos();
-        return;
-      }
-      const nextEmptyContainer = findNextEmptyContainer(dropAreas, targetIndex, draggedTile, event.clientX);
-      if (nextEmptyContainer) {
-        // Move the existing tile to the next empty container
-        nextEmptyContainer.appendChild(existingTile);
-      } else {
-        // No empty container found, return the dragged tile to its original position
-        leaveTileOnLastPos();
-        return;
-      }
+    targetTileIndex.value = parseInt(nearestDropArea.dataset.index);
+    const sourceIndex = index;
+    existingTile.value = nearestDropArea.querySelector(".tile");
+    const sourceTile = section1Tiles.value[sourceIndex];
+
+
+    console.log("TARGET_TILE:", targetTile.value);
+    console.log("EXISTING_TILE:", existingTile.value);
+    console.log("SOURCE_TILE:", sourceTile);
+    console.log("SOURCE_INDEX:", sourceIndex);
+    console.log("TARGET_INDEX:", targetTileIndex.value);
+    console.log("DRAGGED_TILE:", draggedTileData);
+
+    if (!existingTile.value ) {
+      // IF NO EXISTING TILE AND EMPTY TILE CONTAINER
+        if (!targetTile.value.number ) {
+          swapTile(sourceIndex);
+          nearestDropArea.appendChild(draggedTile);
+          
+          leaveTileOnLastPos();
+          
+        }else{
+          console.log('2')
+        }
+        
+
+      // else {
+      //IF EXIST TILE AND HOLDED TILE CONTAINER
+      // if (
+      //   draggedTile.getBoundingClientRect().top >=
+      //   existingTile.getBoundingClientRect().top
+      // ) {
+      //   leaveTileOnLastPos();
+      //   return;
+      // }
+
+      // const nextEmptyContainer = findNextEmptyContainer(
+      //   dropAreas,
+      //   targetIndex,
+      //   draggedTile,
+      //   event.clientX
+      // );
+      // if (nextEmptyContainer) {
+      //   // nextEmptyContainer.appendChild(draggedTile);
+      //   //swapTile(sourceIndex, targetIndex);
+      // }
     }
-
-    const targetTile = section1Tiles.value[targetIndex];
-    if (targetTile.number || targetTile.color) {
-      // There is already a tile in the target tile container, don't swap
-      leaveTileOnLastPos();
-      return;
-    }
-
-    // Swap tiles
-    [section1Tiles.value[sourceIndex], section1Tiles.value[targetIndex]] = [
-      section1Tiles.value[targetIndex],
-      section1Tiles.value[sourceIndex],
-    ];
-
-    // Move the dragged tile to the nearest tile container
-    nearestDropArea.appendChild(draggedTile);
   }
 
   leaveTileOnLastPos();
 };
 
+const leaveTileOnLastPos = () => {
+  if (!draggedTile) return;
+
+  try {
+    draggedTile.style.zIndex = "";
+    draggedTile.classList.remove("dragging-active");
+    draggedTile = null;
+
+    const dropAreas = document.querySelectorAll(".tile-container");
+    for (const dropArea of dropAreas) {
+      dropArea.classList.remove("highlight");
+    }
+    
+    //sourceTileContainer.appendChild('<span></span>');
+  } catch (error) {
+    console.error("Error in leaveTileOnLastPos function:", error);
+  }
+};
+
+const swapTile = (sourceIndex) => {
+  if (targetTileIndex.value === null) {
+    console.warn("Target index is not set. Cannot swap tiles.");
+    return;
+  }
+  [section1Tiles.value[sourceIndex], section1Tiles.value[targetTileIndex.value]] = [
+    section1Tiles.value[targetTileIndex.value],
+    section1Tiles.value[sourceIndex],
+  ];
+};
 
 const findNextEmptyContainer = (dropAreas, index, existingTile, mouseX) => {
   const existingTileRect = existingTile.getBoundingClientRect();
-  const existingTileCenterX = existingTileRect.left + existingTileRect.width / 2;
+  const existingTileCenterX =
+    existingTileRect.left + existingTileRect.width / 2;
 
   // Check for empty container on the left side
   if (mouseX > existingTileCenterX) {
@@ -241,22 +302,11 @@ const findNextEmptyContainer = (dropAreas, index, existingTile, mouseX) => {
 
 
 
-
 const moveAt = (event) => {
   if (!draggedTile) return;
   draggedTile.style.left = event.pageX - offsetX + "px";
   draggedTile.style.top = event.pageY - offsetY + "px";
 };
 
-const leaveTileOnLastPos = () => {
-  if (!draggedTile) return;
-  draggedTile.style.zIndex = "";
-  draggedTile.classList.remove("dragging-active");
-  draggedTile = null;
 
-  const dropAreas = document.querySelectorAll(".tile-container");
-  for (const dropArea of dropAreas) {
-    dropArea.classList.remove("highlight");
-  }
-};
 </script>
