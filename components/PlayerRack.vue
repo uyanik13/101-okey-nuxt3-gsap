@@ -54,7 +54,9 @@
 import { ref, defineProps, onMounted } from "vue";
 import tiles from "@/assets/fixtures/tiles.json";
 import Tile from "@/components/Tile.vue";
+import { useOverlap } from '@/composables/useOverlap.js';
 const { $gsap: gsap, $Draggable: Draggable } = useNuxtApp();
+const { getOverlapRatio } = useOverlap();
 
 const section1Tiles = ref([
   ...tiles,
@@ -128,42 +130,59 @@ const removeCustoms = (tile) => {
 
 const findTargetContainer = (tile) => {
   let target = null;
-  tileContainers.value.some((container) => {
-    if (Draggable.hitTest(tile, container)) {
+  let maxOverlapRatio = 0;
+
+  tileContainers.value.forEach((container) => {
+    const overlapRatio = getOverlapRatio(tile, container);
+    if (overlapRatio > maxOverlapRatio) {
       target = container;
+      maxOverlapRatio = overlapRatio;
     }
   });
-  return target;
+
+  if (maxOverlapRatio > 0.1) {
+    return target;
+  } else {
+    return tile.parentElement;
+  }
 };
 
+
 const changePosIfHasTarget = (tile1, target) => {
+
   if (target) {
     const tilesInTarget = Array.from(target.children);
     if (tilesInTarget.length) {
-      const tile2 = tilesInTarget[0];
+      const tile2 = tilesInTarget[tilesInTarget.length - 1];
       let tile1Index = tile1.dataset.index;
       let tile2Index = tile2.dataset.index;
       tile1.dataset.moved = "true";
       tile2.dataset.moved = "true";
       tile1Index > tile2Index ? tile2.after(tile1) : tile1.after(tile2);
+
+      console.log(tile2)
+      // Move the rest of the tiles
+      for (let i = 1; i < tilesInTarget.length - 1; i++) {
+        const tile = tilesInTarget[i];
+      
+        tile.dataset.moved = "true";
+        tile1Index > tile2Index ? tile2.after(tile) : tile.before(tile2);
+      }
     }
   }
 };
+
 
 const changePosition = (tile, zone) => {
   while (zone.firstChild) {
     zone.removeChild(zone.firstChild);
   }
   zone.appendChild(tile);
-
     gsap.to(tile, {
-      duration: 0.5,
-      x: 2,
-      ease: "power2.elastic",
-      backgroundColor: "#ff0000",
+      keyframes: {
+        x: [1, -1],
+      },
       onComplete: function () {
-        tile.style.top = "";
-        tile.style.left = "";
         tile.style.transform = "";
         tile.style.rotate = "";
         tile.dataset.moved = "false";
