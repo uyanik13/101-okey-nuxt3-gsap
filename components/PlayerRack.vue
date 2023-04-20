@@ -63,81 +63,39 @@ const section1Tiles = ref([
 
 const tileContainers = ref([]);
 const tilesRef = ref(null);
+const highlightedTarget = ref(null);
 
 const onDrag = (tile, event) => {
-  const zone = getZone(tile);
-  if (zone && zone !== tile.dataset.zone) {
+  addCustoms(tile);
+  const target = findTargetContainer(tile);
+  if (target) {
     gsap.killTweensOf(tile);
   }
 };
 
-const onDragStart = (tile) => {
-  tile.classList.add("dragging");
-};
 const onPress = (tile) => {
-  gsap.fromTo(tile, { opacity: 1, scale: 1 }, { opacity: 0.75, scale: 0.9, duration: 0.3 });
-
+  gsap.to(tile, { opacity: 0.75, scale: 0.95, duration: 0.3 });
 };
+const onRelease = (tile) => {
+  gsap.to(tile, { opacity: 1, scale: 1 });
+};
+
 const onDragEnd = (tile, event) => {
-  const zone = getZone(tile);
-  if (zone && zone !== tile.dataset.zone) {
-    changeZone(tile, zone);
+  const target = findTargetContainer(tile);
+  changePosIfHasTarget(tile, target);
+  if (target) {
+    changePosition(tile, target);
     gsap.set(tile, {
       clearProps: "transform",
       zIndex: 1000,
     });
   }
-  console.log(tile)
-  tile.classList.remove("dragging");
-  
-  hitTest(tile);
+  removeCustoms(tile);
   reorderTiles();
-  
-};
-
-const getZone = (tile) => {
-  const tileRect = tile.getBoundingClientRect();
-  const zones = document.querySelectorAll(".tile-container");
-  let closestZone = null;
-  let closestDistance = Infinity;
-  for (const zone of zones) {
-    const zoneRect = zone.getBoundingClientRect();
-    const zoneCenterX = (zoneRect.left + zoneRect.right) / 2;
-    const zoneCenterY = (zoneRect.top + zoneRect.bottom) / 2;
-    if (
-      tileRect.left < zoneRect.right &&
-      tileRect.right > zoneRect.left &&
-      tileRect.top < zoneRect.bottom &&
-      tileRect.bottom > zoneRect.top &&
-      Math.abs(
-        tileRect.left + tileRect.right - zoneRect.left - zoneRect.right
-      ) < tileRect.width &&
-      Math.abs(
-        tileRect.top + tileRect.bottom - zoneRect.top - zoneRect.bottom
-      ) < tileRect.height &&
-      Math.sqrt(
-        (tileRect.left - zoneCenterX) ** 2 + (tileRect.top - zoneCenterY) ** 2
-      ) < closestDistance
-    ) {
-      closestZone = zone;
-      closestDistance = Math.sqrt(
-        (tileRect.left - zoneCenterX) ** 2 + (tileRect.top - zoneCenterY) ** 2
-      );
-    }
-  }
-  return closestZone;
-};
-
-const changeZone = (tile, zone) => {
-  while (zone.firstChild) {
-    zone.removeChild(zone.firstChild);
-  }
-  zone.appendChild(tile);
 };
 
 const reorderTiles = () => {
-  const containers = document.querySelectorAll(".tile-container");
-  containers.forEach((container) => {
+  tileContainers.value.forEach((container) => {
     const tiles = Array.from(container.children).sort((a, b) => {
       const aRect = a.getBoundingClientRect();
       const bRect = b.getBoundingClientRect();
@@ -147,24 +105,71 @@ const reorderTiles = () => {
   });
 };
 
-const hitTest = (tile) => {
-  const containers = tileContainers.value;
-  containers.forEach((container) => {
-    const rect1 = tile.getBoundingClientRect();
-    const rect2 = container.getBoundingClientRect();
-    const intersection =
-      Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left);
-    const ratio = intersection / rect1.width;
-    if (ratio > 0.5) {
-      container.classList.add("highlight");
-    } else {
-      container.classList.remove("highlight");
+const addCustoms = (tile) => {
+  const newTarget = findTargetContainer(tile);
+  if (newTarget !== highlightedTarget.value) {
+    if (highlightedTarget.value) {
+      highlightedTarget.value.classList.remove("highlight");
     }
-  });
+    highlightedTarget.value = newTarget;
+    if (highlightedTarget.value) {
+      highlightedTarget.value.classList.add("highlight");
+    }
+  }
+  tile.classList.add("dragging");
 };
 
-const onClick = (tile) => {
-  //
+const removeCustoms = (tile) => {
+  const target = findTargetContainer(tile);
+  target.classList.remove("highlight");
+  tile.classList.remove("dragging");
+  highlightedTarget.value.classList.remove("highlight");
+};
+
+const findTargetContainer = (tile) => {
+  let target = null;
+  tileContainers.value.some((container) => {
+    if (Draggable.hitTest(tile, container)) {
+      target = container;
+    }
+  });
+  return target;
+};
+
+const changePosIfHasTarget = (tile1, target) => {
+  if (target) {
+    const tilesInTarget = Array.from(target.children);
+    if (tilesInTarget.length) {
+      const tile2 = tilesInTarget[0];
+      let tile1Index = tile1.dataset.index;
+      let tile2Index = tile2.dataset.index;
+      tile1.dataset.moved = "true";
+      tile2.dataset.moved = "true";
+      tile1Index > tile2Index ? tile2.after(tile1) : tile1.after(tile2);
+    }
+  }
+};
+
+const changePosition = (tile, zone) => {
+  while (zone.firstChild) {
+    zone.removeChild(zone.firstChild);
+  }
+  zone.appendChild(tile);
+
+    gsap.to(tile, {
+      duration: 0.5,
+      x: 2,
+      ease: "power2.elastic",
+      backgroundColor: "#ff0000",
+      onComplete: function () {
+        tile.style.top = "";
+        tile.style.left = "";
+        tile.style.transform = "";
+        tile.style.rotate = "";
+        tile.dataset.moved = "false";
+      },
+    });
+
 };
 
 onMounted(() => {
@@ -176,14 +181,11 @@ onMounted(() => {
       dragResistance: 0,
       activeCursor: "grabbing",
       onDrag: onDrag.bind(this, tile),
-      onClick: onClick.bind(this),
       onDragEnd: onDragEnd.bind(this, tile),
-      onDragStart: onDragStart.bind(this, tile),
       onPress: onPress.bind(this, tile),
+      onRelease: onRelease.bind(this, tile),
     });
   });
-
-  // get the tile containers using refs
   tileContainers.value = Array.from(tileContainers.value);
 });
 </script>
