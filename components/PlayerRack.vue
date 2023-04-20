@@ -13,30 +13,20 @@
         </div>
       </div>
       <!--CONTENT SECTION START -->
-      <div
-        ref="section1Ref"
-        class="flex flex-col justify-between w-full brightness-125"
-      >
+      <div class="flex flex-col justify-between w-full brightness-125">
         <div
+          ref="tilesRef"
           id="tiles"
           class="flex flex-wrap tiles rack-bg border-t-2 border-b-2 border-gray-200 h-42 tiles"
         >
           <div
+            ref="tileContainers"
             v-for="(tile, index) in section1Tiles"
             :key="index"
-            class="tile-container flex w-14 h-20 border-dashed border-1 border-indigo-600"
+            class="tile-container"
             :data-index="index"
           >
-          <!-- <Tile
-              :number="tile.number"
-              :color="tile.color"
-              @dragover.prevent
-              @drop="onDrop(i, $event)"
-              @mousemove="onMouseMove($event)"
-              @mousedown="onMouseDown($event, index)"
-              @mouseup="onMouseUp($event, index)"
-              draggable="true"
-            /> -->
+            <Tile :number="tile.number" :color="tile.color" />
           </div>
         </div>
 
@@ -61,252 +51,140 @@
   </div>
 </template>
 <script setup>
-import { ref, defineProps, computed } from "vue";
+import { ref, defineProps, onMounted } from "vue";
 import tiles from "@/assets/fixtures/tiles.json";
-import Tile from '@/components/Tile.vue'
-import { defineComponent } from "vue";
-
-// const props = defineProps({
-//   tiles: Array,
-// });
-
-const section1Ref = ref(null);
+import Tile from "@/components/Tile.vue";
+const { $gsap: gsap, $Draggable: Draggable } = useNuxtApp();
 
 const section1Tiles = ref([
   ...tiles,
   ...Array(11).fill({ number: null, color: null }),
 ]);
 
-const targetTileIndex = ref(null);
-const targetTile = computed(() => {
-  if (targetTileIndex.value === null) {
-    return null;
-  }
-  return section1Tiles.value[targetTileIndex.value];
-});
+const tileContainers = ref([]);
+const tilesRef = ref(null);
 
-const existingTileIndex = ref(null);
-const existingTile = computed(()=> {
-  if (existingTileIndex.value === null) {
-    return null;
-  }
-  return section1Tiles.value[existingTileIndex.value];
-})
-
-
-let draggedTile = null;
-let draggedTileData = null;
-let offsetX = 0;
-let offsetY = 0;
-
-const onMouseDown = (event, index) => {
-  event.preventDefault();
-  if (!draggedTile) {
-    draggedTileData = section1Tiles.value[index];
-    draggedTile = event.target.closest(".tile");
-    offsetX = event.clientX - draggedTile.getBoundingClientRect().left;
-    offsetY = event.clientY - draggedTile.getBoundingClientRect().top;
-    draggedTile.style.position = "absolute";
-    draggedTile.style.zIndex = "1000";
-    document.body.appendChild(draggedTile);
-    moveAt(event);
-
-    let tilesContainer = null;
-    section1Ref.value.classList.add("dragging-active");
-    tilesContainer = section1Ref.value.querySelector(".tile-container");
-    tilesContainer.style.height = `${tilesContainer.offsetHeight}px`;
+const onDrag = (tile, event) => {
+  const zone = getZone(tile);
+  if (zone && zone !== tile.dataset.zone) {
+    gsap.killTweensOf(tile);
   }
 };
 
-const onMouseMove = (event) => {
-  if (!draggedTile) return;
-  moveAt(event, event);
-  const dropAreas = document.querySelectorAll(".tile-container");
+const onDragStart = (tile) => {
+  tile.classList.add("dragging");
+};
+const onPress = (tile) => {
+  gsap.fromTo(tile, { opacity: 1, scale: 1 }, { opacity: 0.75, scale: 0.9, duration: 0.3 });
 
-  let nearestDropArea = null;
-  let minDistance = Number.MAX_VALUE;
+};
+const onDragEnd = (tile, event) => {
+  const zone = getZone(tile);
+  if (zone && zone !== tile.dataset.zone) {
+    changeZone(tile, zone);
+    gsap.set(tile, {
+      clearProps: "transform",
+      zIndex: 1000,
+    });
+  }
+  console.log(tile)
+  tile.classList.remove("dragging");
+  
+  hitTest(tile);
+  reorderTiles();
+  
+};
 
-  for (const dropArea of dropAreas) {
-    if (!section1Ref.value.contains(dropArea)) {
-      dropArea.classList.remove("highlight");
-      continue;
-    }
-
-    const dropAreaRect = dropArea.getBoundingClientRect();
-    const dropAreaCenterX = dropAreaRect.left + dropAreaRect.width / 2;
-    const dropAreaCenterY = dropAreaRect.top + dropAreaRect.height / 2;
-    const distance = Math.sqrt(
-      Math.pow(event.clientX - dropAreaCenterX, 2) +
-        Math.pow(event.clientY - dropAreaCenterY, 2)
-    );
-
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearestDropArea = dropArea;
+const getZone = (tile) => {
+  const tileRect = tile.getBoundingClientRect();
+  const zones = document.querySelectorAll(".tile-container");
+  let closestZone = null;
+  let closestDistance = Infinity;
+  for (const zone of zones) {
+    const zoneRect = zone.getBoundingClientRect();
+    const zoneCenterX = (zoneRect.left + zoneRect.right) / 2;
+    const zoneCenterY = (zoneRect.top + zoneRect.bottom) / 2;
+    if (
+      tileRect.left < zoneRect.right &&
+      tileRect.right > zoneRect.left &&
+      tileRect.top < zoneRect.bottom &&
+      tileRect.bottom > zoneRect.top &&
+      Math.abs(
+        tileRect.left + tileRect.right - zoneRect.left - zoneRect.right
+      ) < tileRect.width &&
+      Math.abs(
+        tileRect.top + tileRect.bottom - zoneRect.top - zoneRect.bottom
+      ) < tileRect.height &&
+      Math.sqrt(
+        (tileRect.left - zoneCenterX) ** 2 + (tileRect.top - zoneCenterY) ** 2
+      ) < closestDistance
+    ) {
+      closestZone = zone;
+      closestDistance = Math.sqrt(
+        (tileRect.left - zoneCenterX) ** 2 + (tileRect.top - zoneCenterY) ** 2
+      );
     }
   }
+  return closestZone;
+};
 
-  for (const dropArea of dropAreas) {
-    if (dropArea === nearestDropArea) {
-      dropArea.classList.add("highlight");
+const changeZone = (tile, zone) => {
+  while (zone.firstChild) {
+    zone.removeChild(zone.firstChild);
+  }
+  zone.appendChild(tile);
+};
+
+const reorderTiles = () => {
+  const containers = document.querySelectorAll(".tile-container");
+  containers.forEach((container) => {
+    const tiles = Array.from(container.children).sort((a, b) => {
+      const aRect = a.getBoundingClientRect();
+      const bRect = b.getBoundingClientRect();
+      return aRect.left - bRect.left;
+    });
+    tiles.forEach((tile) => container.appendChild(tile));
+  });
+};
+
+const hitTest = (tile) => {
+  const containers = tileContainers.value;
+  containers.forEach((container) => {
+    const rect1 = tile.getBoundingClientRect();
+    const rect2 = container.getBoundingClientRect();
+    const intersection =
+      Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left);
+    const ratio = intersection / rect1.width;
+    if (ratio > 0.5) {
+      container.classList.add("highlight");
     } else {
-      dropArea.classList.remove("highlight");
+      container.classList.remove("highlight");
     }
-  }
+  });
 };
 
-const onMouseUp = (event, index) => {
-  onDrop(event, index);
+const onClick = (tile) => {
+  //
 };
 
-const onDrop = (event, index) => {
-  event.preventDefault();
+onMounted(() => {
+  const tiles = tilesRef.value.querySelectorAll(".tile");
+  tiles.forEach((tile) => {
+    Draggable.create(tile, {
+      bounds: ".game-area",
+      type: "x,y",
+      dragResistance: 0,
+      activeCursor: "grabbing",
+      onDrag: onDrag.bind(this, tile),
+      onClick: onClick.bind(this),
+      onDragEnd: onDragEnd.bind(this, tile),
+      onDragStart: onDragStart.bind(this, tile),
+      onPress: onPress.bind(this, tile),
+    });
+  });
 
-  if (!draggedTile) return;
-
-  let nearestDropArea = null;
-  let minDistance = Number.MAX_VALUE;
-  const dropAreas = document.querySelectorAll(".tile-container");
-
-  for (const dropArea of dropAreas) {
-    if (!section1Ref.value.contains(dropArea)) continue;
-
-    const dropAreaRect = dropArea.getBoundingClientRect();
-    const dropAreaCenterX = dropAreaRect.left + dropAreaRect.width / 2;
-    const dropAreaCenterY = dropAreaRect.top + dropAreaRect.height / 2;
-
-    const distance = Math.sqrt(
-      Math.pow(event.clientX - dropAreaCenterX, 2) +
-        Math.pow(event.clientY - dropAreaCenterY, 2)
-    );
-
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearestDropArea = dropArea;
-    }
-  }
-
-
-  if (nearestDropArea) {
-    targetTileIndex.value = parseInt(nearestDropArea.dataset.index);
-    const sourceIndex = index;
-    existingTile.value = nearestDropArea.querySelector(".tile");
-    const sourceTile = section1Tiles.value[sourceIndex];
-
-
-    console.log("TARGET_TILE:", targetTile.value);
-    console.log("EXISTING_TILE:", existingTile.value);
-    console.log("SOURCE_TILE:", sourceTile);
-    console.log("SOURCE_INDEX:", sourceIndex);
-    console.log("TARGET_INDEX:", targetTileIndex.value);
-    console.log("DRAGGED_TILE:", draggedTileData);
-
-    if (!existingTile.value ) {
-      // IF NO EXISTING TILE AND EMPTY TILE CONTAINER
-        if (!targetTile.value.number ) {
-          swapTile(sourceIndex);
-          nearestDropArea.appendChild(draggedTile);
-          
-          leaveTileOnLastPos();
-          
-        }else{
-          console.log('2')
-        }
-        
-
-      // else {
-      //IF EXIST TILE AND HOLDED TILE CONTAINER
-      // if (
-      //   draggedTile.getBoundingClientRect().top >=
-      //   existingTile.getBoundingClientRect().top
-      // ) {
-      //   leaveTileOnLastPos();
-      //   return;
-      // }
-
-      // const nextEmptyContainer = findNextEmptyContainer(
-      //   dropAreas,
-      //   targetIndex,
-      //   draggedTile,
-      //   event.clientX
-      // );
-      // if (nextEmptyContainer) {
-      //   // nextEmptyContainer.appendChild(draggedTile);
-      //   //swapTile(sourceIndex, targetIndex);
-      // }
-    }
-  }
-
-  leaveTileOnLastPos();
-};
-
-const leaveTileOnLastPos = () => {
-  if (!draggedTile) return;
-
-  try {
-    draggedTile.style.zIndex = "";
-    draggedTile.classList.remove("dragging-active");
-    draggedTile = null;
-
-    const dropAreas = document.querySelectorAll(".tile-container");
-    for (const dropArea of dropAreas) {
-      dropArea.classList.remove("highlight");
-    }
-    
-    //sourceTileContainer.appendChild('<span></span>');
-  } catch (error) {
-    console.error("Error in leaveTileOnLastPos function:", error);
-  }
-};
-
-const swapTile = (sourceIndex) => {
-  if (targetTileIndex.value === null) {
-    console.warn("Target index is not set. Cannot swap tiles.");
-    return;
-  }
-  [section1Tiles.value[sourceIndex], section1Tiles.value[targetTileIndex.value]] = [
-    section1Tiles.value[targetTileIndex.value],
-    section1Tiles.value[sourceIndex],
-  ];
-};
-
-const findNextEmptyContainer = (dropAreas, index, existingTile, mouseX) => {
-  const existingTileRect = existingTile.getBoundingClientRect();
-  const existingTileCenterX =
-    existingTileRect.left + existingTileRect.width / 2;
-
-  // Check for empty container on the left side
-  if (mouseX > existingTileCenterX) {
-    for (let i = index - 1; i >= 0; i--) {
-      const container = dropAreas[i];
-      if (!container.querySelector(".tile")) {
-        return container;
-      }
-    }
-  }
-
-  // Check for empty container on the right side
-  if (mouseX <= existingTileCenterX) {
-    for (let i = index + 1; i < dropAreas.length; i++) {
-      const container = dropAreas[i];
-      if (!container.querySelector(".tile")) {
-        return container;
-      }
-    }
-  }
-
-  return null;
-};
-
-
-
-
-
-const moveAt = (event) => {
-  if (!draggedTile) return;
-  draggedTile.style.left = event.pageX - offsetX + "px";
-  draggedTile.style.top = event.pageY - offsetY + "px";
-};
-
-
+  // get the tile containers using refs
+  tileContainers.value = Array.from(tileContainers.value);
+});
 </script>
+

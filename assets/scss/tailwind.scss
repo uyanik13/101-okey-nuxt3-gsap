@@ -35,14 +35,23 @@
   background-image: url("/images/tile.png");
   background-size: cover;
 }
-.tiles {
-  flex-wrap: wrap;
-}
 
 .highlight {
-  border-color: rgba(187, 105, 6, 0.949);
-  background-color: rgba(187, 105, 6, 0.949);
+  border-color: rgba(245, 241, 236, 0.949);
+  background-color: rgba(6, 148, 187, 0.949);
 }
 
+.tile-container {
+  @apply flex w-14 h-20 border-dashed border-1 border-indigo-600;
+}
 
+// .tile:hover {
+//   transform: scale(1.1);
+//   transition: transform 0.1s ease-in-out;
+// }
+
+// .tile:active {
+//   transform: scale(0.9);
+//   transition: transform 0.1s ease-in-out;
+// }
 

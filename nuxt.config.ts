@@ -15,7 +15,7 @@ export default defineNuxtConfig({
     }
   },
   plugins: [
-
+    '@/plugins/gsap.js'
   ],
   postcss: {
     plugins: {

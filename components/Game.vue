@@ -1,5 +1,5 @@
 <template>
-  <div id="game-area" class="blue-image min-h-screen p-10">
+  <div id="game-area" class="game-area blue-image min-h-screen p-10">
     <!--TOP SECTION -->
     <div class="top h-24 flex justify-between">
       <div class="h-8 flex space-x-2">

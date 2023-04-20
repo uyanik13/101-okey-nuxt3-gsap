@@ -4,8 +4,3 @@
     </div>
 </template>
   
-
-<script setup>
-const test = ref()
-</script>
-  
