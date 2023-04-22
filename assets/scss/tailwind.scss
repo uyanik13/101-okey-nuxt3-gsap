@@ -55,3 +55,7 @@
 //   transition: transform 0.1s ease-in-out;
 // }
 
+.tile-style {
+  @apply tile-bg border-1 border-gray-500 rounded-lg w-14 h-20 flex flex-col items-center justify-center z-999;
+}
+
