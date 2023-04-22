@@ -49,7 +49,7 @@
   </div>
 </template>
 <script setup>
-import { ref, defineProps, onMounted } from "vue";
+import { ref, watch, onMounted } from "vue";
 import tiles from "@/assets/fixtures/tiles.json";
 import Tile from "@/components/Tile.vue";
 import { useOverlap } from "@/composables/useOverlap.js";
@@ -60,14 +60,34 @@ const { getOverlapRatio } = useOverlap();
 
 const playerTiles = ref([...tiles]);
 
+const highlightedTarget = ref(null);
 const tilesRef = ref(null);
 const tileDivs = ref([]);
 
 const onDrag = (tile, event) => {
   const target = findTargetTile(tile);
+  addCustomStyle(target)
   if (target) {
     gsap.killTweensOf(tile);
   }
+};
+
+const addCustomStyle = (target)=> {
+  const newTarget = target.div;
+  if (newTarget !== highlightedTarget.value) {
+    if (highlightedTarget.value) {
+      highlightedTarget.value.classList.remove("highlight");
+    }
+    highlightedTarget.value = newTarget;
+    if (highlightedTarget.value) {
+      highlightedTarget.value.classList.add("highlight");
+    }
+  }
+
+}
+
+const removeCustoms = () => {
+  highlightedTarget.value.classList.remove("highlight");
 };
 
 const onPress = (tile) => {
@@ -91,11 +111,13 @@ const onDragEnd = (tile, event) => {
       zIndex: 1000,
     });
   }
+  removeCustoms(tile);
 };
 
 const findTargetTile = (movedTile) => {
   let target = {
     item: false,
+    div: null,
     index: null,
   };
   tileDivs.value.forEach((tile) => {
@@ -103,6 +125,7 @@ const findTargetTile = (movedTile) => {
       const hitTestResult = Draggable.hitTest(movedTile, tile, "50%");
       if (hitTestResult) {
         target.item = true;
+        target.div = tile;
         target.index = tile.dataset.index;
       }
     }
@@ -111,20 +134,42 @@ const findTargetTile = (movedTile) => {
   return target;
 };
 
-
 const changePosition = (tile, target) => {
-  console.log(target);
   const tileIndex = parseInt(tile.dataset.index);
-  const targetTile = playerTiles.value[target.index]
+  const targetIndex = target.index;
+  const targetTile = playerTiles.value[targetIndex];
   if (target.item && targetTile.number) {
-    const movedElement = playerTiles.value.splice(tileIndex, 1)[0];
-    playerTiles.value.splice(target.index, 0, movedElement);
-  }else{
+    if (targetIndex > 15) {
+      //THAT SECTION IS FINE
+      const movedElement = playerTiles.value[tileIndex];
+      playerTiles.value.splice(tileIndex, 1, { number: null, color: null });
+      playerTiles.value.splice(targetIndex, 0, movedElement);
+    } else {
+      const movedElement = playerTiles.value[tileIndex];
+      playerTiles.value[tileIndex] = { number: null, color: null };
+      playerTiles.value.splice(targetIndex, 0, movedElement);
+
+      console.log("TARGET_EXIST_UP_SECTION", movedElement);
+    }
+  } else {
+    //THAT SECTION IS FINE
     const movedElement = playerTiles.value[tileIndex];
-    playerTiles.value[target.index] = movedElement;
-    playerTiles.value[tileIndex] = {number:null, color:null};
+    playerTiles.value[targetIndex] = movedElement;
+    playerTiles.value[tileIndex] = { number: null, color: null };
   }
+
+  // console.log("PLAYER_TILES", playerTiles.value);
+  // console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
 };
+
+watch(playerTiles.value, (newValue, oldValue) => {
+  if (newValue.length > 32) {
+      let lastElement = playerTiles.value[playerTiles.value.length - 1]
+      if(lastElement.number === null){
+          playerTiles.value.splice(playerTiles.value.length - 1, 1);
+      }
+  }
+});
 
 onMounted(() => {
   tileDivs.value = tilesRef.value.querySelectorAll(".tile");
