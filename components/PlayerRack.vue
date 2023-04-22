@@ -52,11 +52,9 @@
 import { ref, watch, onMounted } from "vue";
 import tiles from "@/assets/fixtures/tiles.json";
 import Tile from "@/components/Tile.vue";
-import { useOverlap } from "@/composables/useOverlap.js";
-import consolaGlobalInstance from "consola";
-import { remove } from "@vue/shared";
+import { useHelpers } from "~~/composables/useHelpers.js";
 const { $gsap: gsap, $Draggable: Draggable } = useNuxtApp();
-const { getOverlapRatio } = useOverlap();
+const { getFirstEmptyTileIndex, getLastEmptyTileIndex } = useHelpers();
 
 const playerTiles = ref([...tiles]);
 
@@ -66,13 +64,13 @@ const tileDivs = ref([]);
 
 const onDrag = (tile, event) => {
   const target = findTargetTile(tile);
-  addCustomStyle(target)
+  addCustomStyle(target);
   if (target) {
     gsap.killTweensOf(tile);
   }
 };
 
-const addCustomStyle = (target)=> {
+const addCustomStyle = (target) => {
   const newTarget = target.div;
   if (newTarget !== highlightedTarget.value) {
     if (highlightedTarget.value) {
@@ -83,11 +81,12 @@ const addCustomStyle = (target)=> {
       highlightedTarget.value.classList.add("highlight");
     }
   }
-
-}
+};
 
 const removeCustoms = () => {
-  highlightedTarget.value.classList.remove("highlight");
+  if (highlightedTarget.value) {
+    highlightedTarget.value.classList.remove("highlight");
+  }
 };
 
 const onPress = (tile) => {
@@ -138,38 +137,89 @@ const changePosition = (tile, target) => {
   const tileIndex = parseInt(tile.dataset.index);
   const targetIndex = target.index;
   const targetTile = playerTiles.value[targetIndex];
+  const movedElement = playerTiles.value[tileIndex];
   if (target.item && targetTile.number) {
-    if (targetIndex > 15) {
-      //THAT SECTION IS FINE
-      const movedElement = playerTiles.value[tileIndex];
-      playerTiles.value.splice(tileIndex, 1, { number: null, color: null });
-      playerTiles.value.splice(targetIndex, 0, movedElement);
-    } else {
-      const movedElement = playerTiles.value[tileIndex];
-      playerTiles.value[tileIndex] = { number: null, color: null };
-      playerTiles.value.splice(targetIndex, 0, movedElement);
+    if (targetIndex < 15) {
+      const firstEmptyTileIndex = getFirstEmptyTileIndex(
+        playerTiles.value,
+        "<"
+      );
 
-      console.log("TARGET_EXIST_UP_SECTION", movedElement);
+      if (firstEmptyTileIndex && tileIndex > 15) {
+        //IF THERE IS AN EMPTY TILES ON UP SECTION TILE AREA  1 -> 5 - NULL - 4
+        console.log("1");
+        playerTiles.value.splice(firstEmptyTileIndex, 1);
+        playerTiles.value.splice(targetIndex, 0, movedElement);
+        playerTiles.value.splice(tileIndex, 1);
+        playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
+      } else {
+        //IF TILE MOVED IN UP SECTION BETWEEN TILES 2-3 | 3-2
+
+        console.log(firstEmptyTileIndex)
+        
+        if (firstEmptyTileIndex) {
+          //integrate deleting empty from left or right
+          console.log("2 -1 ");
+          //playerTiles.value.splice(firstEmptyTileIndex, 1); //REMOVE EMPTY FROM UP
+          playerTiles.value.splice(targetIndex, 0, movedElement);
+          playerTiles.value.splice(tileIndex, 1);
+          playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
+        } else {
+          console.log("2 -2 ");
+          playerTiles.value.splice(tileIndex, 1);
+          playerTiles.value.splice(targetIndex, 0, movedElement);
+        }
+      }
+    } else {
+      //THAT SECTION IS FINE
+      const firstEmptyTileIndex = getFirstEmptyTileIndex(
+        playerTiles.value,
+        ">"
+      );
+
+      if (firstEmptyTileIndex && targetIndex > 15 && tileIndex < 15) {
+        console.log("3");
+        playerTiles.value.splice(firstEmptyTileIndex, 1);
+        playerTiles.value.splice(targetIndex, 0, movedElement);
+        playerTiles.value.splice(tileIndex, 1);
+        playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
+      } else {
+        const lastEmptyTileIndex = getLastEmptyTileIndex(
+          playerTiles.value,
+          "<"
+        );
+        if (targetIndex == 15 && tileIndex >= 16 && lastEmptyTileIndex) {
+          console.log("4");
+          playerTiles.value.splice(lastEmptyTileIndex, 1);
+          playerTiles.value.splice(targetIndex, 0, movedElement);
+          playerTiles.value.splice(tileIndex, 1);
+          playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
+        } else {
+          console.log("5");
+          playerTiles.value.splice(tileIndex, 1);
+          playerTiles.value.splice(targetIndex, 0, movedElement);
+        }
+      }
     }
   } else {
-    //THAT SECTION IS FINE
-    const movedElement = playerTiles.value[tileIndex];
+    console.log("6");
+    // IF THE TILE IS MOVED TO EMPTY SECTION TILE AREA
     playerTiles.value[targetIndex] = movedElement;
     playerTiles.value[tileIndex] = { number: null, color: null };
   }
 
   // console.log("PLAYER_TILES", playerTiles.value);
-  // console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
+    console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
 };
 
-watch(playerTiles.value, (newValue, oldValue) => {
-  if (newValue.length > 32) {
-      let lastElement = playerTiles.value[playerTiles.value.length - 1]
-      if(lastElement.number === null){
-          playerTiles.value.splice(playerTiles.value.length - 1, 1);
-      }
-  }
-});
+// watch(playerTiles.value, (newValue, oldValue) => {
+//   if (newValue.length > 32) {
+//     let lastElement = playerTiles.value[playerTiles.value.length - 1];
+//     if (lastElement.number === null) {
+//       //playerTiles.value.splice(playerTiles.value.length - 1, 1);
+//     }
+//   }
+// });
 
 onMounted(() => {
   tileDivs.value = tilesRef.value.querySelectorAll(".tile");
