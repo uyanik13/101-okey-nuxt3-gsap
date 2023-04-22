@@ -1,6 +1,6 @@
 <template>
   <div
-    :class="number ? 'tile tile-style' :'tile'"
+    :class="number ? 'tile tile-style' :'tile w-14 h-20 '"
     :style="{ color: colorCode }"
     :data-index="dataIndex"
   >

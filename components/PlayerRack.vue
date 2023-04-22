@@ -98,60 +98,31 @@ const findTargetTile = (movedTile) => {
     item: false,
     index: null,
   };
-  let foundTargetInHitTest = false;
   tileDivs.value.forEach((tile) => {
     if (tile !== movedTile) {
       const hitTestResult = Draggable.hitTest(movedTile, tile, "50%");
       if (hitTestResult) {
         target.item = true;
         target.index = tile.dataset.index;
-        foundTargetInHitTest = true;
       }
     }
   });
 
-  if (!foundTargetInHitTest) {
-    let minDistance = Infinity;
-    tileDivs.value.forEach((targetTile) => {
-      if (targetTile !== movedTile) {
-        const distance = calculateDistance(movedTile, targetTile);
-        if (distance < minDistance) {
-          target.item = true;
-          target.index = targetTile.dataset.index;
-          minDistance = distance;
-        }
-      }
-    });
-  }
-
   return target;
-};
-
-const calculateDistance = (element1, element2) => {
-  const dx = element1.offsetLeft - element2.offsetLeft;
-  const dy = element1.offsetTop - element2.offsetTop;
-  return Math.sqrt(dx * dx + dy * dy);
 };
 
 
 const changePosition = (tile, target) => {
   console.log(target);
   const tileIndex = parseInt(tile.dataset.index);
-  if (target.item) {
+  const targetTile = playerTiles.value[target.index]
+  if (target.item && targetTile.number) {
     const movedElement = playerTiles.value.splice(tileIndex, 1)[0];
     playerTiles.value.splice(target.index, 0, movedElement);
-    gsap.to(tile, {
-      duration: 1,
-      x: 1,
-      y: 0,
-      onComplete: () => {
-        gsap.set(tile, {
-          x: 0,
-          y: 0,
-          zIndex: 1,
-        });
-      },
-    });
+  }else{
+    const movedElement = playerTiles.value[tileIndex];
+    playerTiles.value[target.index] = movedElement;
+    playerTiles.value[tileIndex] = {number:null, color:null};
   }
 };
 
