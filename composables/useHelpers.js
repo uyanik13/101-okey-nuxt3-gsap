@@ -4,6 +4,54 @@ import {
 
 export const useHelpers = () => {
 
+  const getNearEmptyIndex = (playerTiles, targetIndex, tileIndex = null) => {
+    let nearestIndex = -1;
+    let nearestDistance = Infinity;
+
+    if(!findEmptyTileBetween(playerTiles, tileIndex, targetIndex))return null;
+  
+    for (let i = 0; i < playerTiles.length; i++) {
+      if (playerTiles[i].number === null) {
+        const distance = Math.abs(targetIndex - i);
+  
+        if (distance < nearestDistance) {
+          nearestIndex = i;
+          nearestDistance = distance;
+        }
+      }
+    }
+  
+    return nearestIndex === -1 ? null : nearestIndex;
+  };
+  
+  const findEmptyTileBetween = (playerTiles, tileIndex, targetIndex) => {
+    console.log('TILE_INDEX', tileIndex)
+    console.log('TARGET_INDEX', targetIndex)
+    if(targetIndex > tileIndex){
+      for (let i = tileIndex; i < targetIndex ; i++) {
+        if (playerTiles[i].number === null) {
+          return true;
+        }
+      }
+    }else{
+
+      for (let i = 0; i < tileIndex && targetIndex < tileIndex ; i++) {
+        if (playerTiles[i].number === null) {
+          return true;
+        }
+      }
+    }
+    
+
+
+    return false;
+  };
+  
+  
+
+
+
+
   const getFirstEmptyTileIndex = (playerTiles, condition = '>') => playerTiles.findIndex((item, index) => {
     if (condition == '>') {
       return index > 15 && item.number == null;
@@ -50,6 +98,7 @@ export const useHelpers = () => {
     getFirstEmptyTileIndex,
     getLastEmptyTileIndex,
     getFirstEmptyNearTileIndex,
-    getFindEmptTilesBetweenTargetAndTile
+    getFindEmptTilesBetweenTargetAndTile,
+    getNearEmptyIndex,
   };
 };

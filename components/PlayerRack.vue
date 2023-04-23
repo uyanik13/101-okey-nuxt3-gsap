@@ -50,7 +50,7 @@
 </template>
 <script setup>
 import { ref, watch, onMounted } from "vue";
-import tiles from "@/assets/fixtures/tiles-test.json";
+import tiles from "@/assets/fixtures/tiles.json";
 import Tile from "@/components/Tile.vue";
 import { useHelpers } from "~~/composables/useHelpers.js";
 const { $gsap: gsap, $Draggable: Draggable } = useNuxtApp();
@@ -59,6 +59,7 @@ const {
   getLastEmptyTileIndex,
   getFirstEmptyNearTileIndex,
   getFindEmptTilesBetweenTargetAndTile,
+  getNearEmptyIndex,
 } = useHelpers();
 
 const playerTiles = ref(tiles);
@@ -101,6 +102,32 @@ const onRelease = (tile) => {
   gsap.to(tile, { opacity: 1, scale: 1 });
 };
 
+function animateTileSwap(fromIndex, toIndex) {
+  const fromTile = getTileElement(fromIndex);
+  const toTile = getTileElement(toIndex);
+
+  const fromRect = fromTile.getBoundingClientRect();
+  const toRect = toTile.getBoundingClientRect();
+
+  const deltaX = toRect.left - fromRect.left;
+  const deltaY = toRect.top - fromRect.top;
+
+  gsap.to(fromTile, { x: deltaX, y: deltaY, duration: 0.5 });
+  gsap.to(toTile, { x: -deltaX, y: -deltaY, duration: 0.5 });
+
+  // Reset the transform after the animation ends
+  gsap.delayedCall(0.5, () => {
+    gsap.set(fromTile, { x: 0, y: 0 });
+    gsap.set(toTile, { x: 0, y: 0 });
+  });
+}
+
+function getTileElement(index) {
+  // Assuming the tiles are rendered with a "tile" class, and their order in the DOM matches the order in the playerTiles.value array
+  const tiles = document.querySelectorAll(".tile");
+  return tiles[index];
+}
+
 const onDragEnd = (tile, event) => {
   const target = findTargetTile(tile);
   if (target.index) {
@@ -130,7 +157,7 @@ const findTargetTile = (movedTile) => {
       if (hitTestResult) {
         target.item = true;
         target.div = tile;
-        target.index = tile.dataset.index;
+        target.index = parseInt(tile.dataset.index);
       }
     }
   });
@@ -144,92 +171,37 @@ const changePosition = (tile, target) => {
   const targetTile = playerTiles.value[targetIndex];
   const movedElement = playerTiles.value[tileIndex];
   if (target.item && targetTile.number) {
-    if (targetIndex < 15) {
-      const firstEmptyTileIndex = getFirstEmptyTileIndex(
-        playerTiles.value,
-        "<"
-      );
+    const nearEmptyIndex = getNearEmptyIndex(
+      playerTiles.value,
+      targetIndex,
+      tileIndex
+    );
 
-      if (firstEmptyTileIndex && tileIndex > 15) {
-        //IF THERE IS AN EMPTY TILES ON UP SECTION TILE AREA  1 -> 5 - NULL - 4
-        console.log("1");
-        playerTiles.value.splice(firstEmptyTileIndex, 1);
-        playerTiles.value.splice(targetIndex, 0, movedElement);
-        playerTiles.value.splice(tileIndex, 1);
-        playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
-      } else {
-        //IF TILE MOVED IN UP SECTION BETWEEN TILES 2-3 | 3-2
+    console.log("nearEmptyIndex", nearEmptyIndex);
 
-        const emptyTiles = getFindEmptTilesBetweenTargetAndTile(playerTiles.value, targetIndex, tileIndex)
-
-        if(emptyTiles.length){
-          const firstNearEmptyTileIndex = getFirstEmptyNearTileIndex(
-            playerTiles.value,
-            targetIndex,
-            "<"
-          );
-
-          if (firstNearEmptyTileIndex && firstNearEmptyTileIndex !== -1) {
-            //integrate deleting empty from left or right
-            console.log("2 -2 ");
-            console.log("firstNearEmptyTileIndex", firstNearEmptyTileIndex);
-            playerTiles.value.splice(firstNearEmptyTileIndex, 1); //REMOVE EMPTY FROM UP
-            playerTiles.value.splice(targetIndex, 0, movedElement); //REMOVE target tile and drop tile
-            playerTiles.value.splice(tileIndex, 1, {
-              number: null,
-              color: null,
-            });
-          }
-        }else{
-          console.log("2 -3 ");
-          playerTiles.value.splice(tileIndex, 1);
-          playerTiles.value.splice(targetIndex, 0, movedElement);
-        }
-
-        //console.log("2 -4 ");
-
-       
-      }
+    if (nearEmptyIndex) {
+      console.log("2222");
+      playerTiles.value.splice(nearEmptyIndex, 1); //REMOVE EMPTY FROM UP
+      playerTiles.value.splice(targetIndex, 0, movedElement); //REMOVE target tile and drop tile
+      playerTiles.value.splice(tileIndex, 1, {
+        number: null,
+        color: null,
+      });
+      //animateTileSwap(tileIndex, targetIndex);
     } else {
-      //THAT SECTION IS FINE
-      const firstEmptyTileIndex = getFirstEmptyTileIndex(
-        playerTiles.value,
-        ">"
-      );
-
-      if (firstEmptyTileIndex && targetIndex > 15 && tileIndex < 15) {
-        console.log("3");
-        playerTiles.value.splice(firstEmptyTileIndex, 1);
-        playerTiles.value.splice(targetIndex, 0, movedElement);
-        playerTiles.value.splice(tileIndex, 1);
-        playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
-      } else {
-        const lastEmptyTileIndex = getLastEmptyTileIndex(
-          playerTiles.value,
-          "<"
-        );
-        if (targetIndex == 15 && tileIndex >= 16 && lastEmptyTileIndex) {
-          console.log("4");
-          playerTiles.value.splice(lastEmptyTileIndex, 1);
-          playerTiles.value.splice(targetIndex, 0, movedElement);
-          playerTiles.value.splice(tileIndex, 1);
-          playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
-        } else {
-          console.log("5");
-          playerTiles.value.splice(tileIndex, 1);
-          playerTiles.value.splice(targetIndex, 0, movedElement);
-        }
-      }
+      console.log('3333')
+      playerTiles.value.splice(tileIndex, 1);
+      playerTiles.value.splice(targetIndex, 0, movedElement);
     }
-  } else {
-    console.log("6");
-    // IF THE TILE IS MOVED TO EMPTY SECTION TILE AREA
+
+   
+  }else{
+    console.log('444')
     playerTiles.value[targetIndex] = movedElement;
     playerTiles.value[tileIndex] = { number: null, color: null };
   }
 
-  // console.log("PLAYER_TILES", playerTiles.value);
-  console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
+   //console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
 };
 
 // watch(playerTiles.value, (newValue, oldValue) => {
