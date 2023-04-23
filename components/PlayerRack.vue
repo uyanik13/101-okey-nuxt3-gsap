@@ -124,7 +124,7 @@ function animateTileSwap(fromIndex, toIndex) {
 
 function getTileElement(index) {
   // Assuming the tiles are rendered with a "tile" class, and their order in the DOM matches the order in the playerTiles.value array
-  const tiles = document.querySelectorAll(".tile");
+  const tiles = document.querySelectorAll(".tile-style");
   return tiles[index];
 }
 
@@ -177,31 +177,27 @@ const changePosition = (tile, target) => {
       tileIndex
     );
 
-    console.log("nearEmptyIndex", nearEmptyIndex);
-
     if (nearEmptyIndex) {
-      console.log("2222");
+      //console.log("2222");
       playerTiles.value.splice(nearEmptyIndex, 1); //REMOVE EMPTY FROM UP
       playerTiles.value.splice(targetIndex, 0, movedElement); //REMOVE target tile and drop tile
       playerTiles.value.splice(tileIndex, 1, {
         number: null,
         color: null,
       });
-      //animateTileSwap(tileIndex, targetIndex);
+      animateTileSwap(tileIndex, targetIndex);
     } else {
-      console.log('3333')
+      //console.log('3333')
       playerTiles.value.splice(tileIndex, 1);
       playerTiles.value.splice(targetIndex, 0, movedElement);
     }
-
-   
-  }else{
-    console.log('444')
+  } else {
+    //console.log('444')
     playerTiles.value[targetIndex] = movedElement;
     playerTiles.value[tileIndex] = { number: null, color: null };
   }
 
-   //console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
+  //console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
 };
 
 // watch(playerTiles.value, (newValue, oldValue) => {

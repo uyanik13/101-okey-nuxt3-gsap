@@ -25,27 +25,24 @@ export const useHelpers = () => {
   };
   
   const findEmptyTileBetween = (playerTiles, tileIndex, targetIndex) => {
-    console.log('TILE_INDEX', tileIndex)
-    console.log('TARGET_INDEX', targetIndex)
+    // console.log('TILE_INDEX', tileIndex)
+    // console.log('TARGET_INDEX', targetIndex)
     if(targetIndex > tileIndex){
-      for (let i = tileIndex; i < targetIndex ; i++) {
+      for (let i = tileIndex + 1; i < targetIndex ; i++) {
         if (playerTiles[i].number === null) {
           return true;
         }
       }
-    }else{
-
-      for (let i = 0; i < tileIndex && targetIndex < tileIndex ; i++) {
+    } else {
+      for (let i = targetIndex + 1; i < tileIndex && i < playerTiles.length ; i++) {
         if (playerTiles[i].number === null) {
           return true;
         }
       }
     }
-    
-
-
     return false;
   };
+  
   
   
 
