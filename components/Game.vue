@@ -72,13 +72,20 @@
 
     <!--PLAYER HAND - RACK -->
     <div class="flex justify-between flex-col items-center h-48">
-      <div
-        class="w-48 h-HorizontalPlayer12 rounded-md p-2 border-2 border-gray-800 bg-black opacity-75 text-white"
-      >
-        <horizontal-player />
+      <div class="flex">
+        <div
+          class="w-48 rounded-md p-2 border-2 border-gray-800 bg-black opacity-75 text-white"
+        >
+          <horizontal-player />
+          <div
+            class="absolute w-16 h-6 p-3 right-40 bottom-16 bg-indigo-800 border-1 border-white text-white rounded-full flex items-center justify-center"
+          >
+            {{ oddSum }}
+          </div>
+        </div>
       </div>
       <div class="rack-width">
-        <PlayerRack :playerName="'Ogur'" :tiles="playersTiles[0]" />
+        <PlayerRack @updateOddSum="updateOddSum" :playerName="'Ogur'" :tiles="playersTiles[0]" />
       </div>
     </div>
   </div>
@@ -90,6 +97,12 @@ const colors = ["red", "blue", "black", "orange"];
 const maxNumber = 13;
 const numPlayers = 1;
 const tilesPerPlayer = 21;
+
+const oddSum = ref(0);
+
+const updateOddSum = (data) => {
+  oddSum.value = data
+}
 
 function createTileSet(colors, maxNumber) {
   let tiles = [];
@@ -119,14 +132,13 @@ function dealTiles(tiles, numPlayers, tilesPerPlayer) {
 
   for (let i = 0; i < numPlayers; i++) {
     playersTiles.push(shuffledTiles.splice(0, tilesPerPlayer));
-  } 
+  }
 
   return playersTiles;
 }
 
 const tiles = createTileSet(colors, maxNumber);
 const playersTiles = dealTiles(tiles, numPlayers, tilesPerPlayer);
-
 </script>
   
   <style>

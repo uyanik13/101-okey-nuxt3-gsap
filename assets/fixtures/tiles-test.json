@@ -48,16 +48,16 @@
         "color": null
     },
     {
-        "number": null,
-        "color": null
+        "number": 1,
+        "color": "blue"
     },
     {
-        "number": null,
-        "color": null
+        "number": 1,
+        "color": "red"
     },
     {
-        "number": null,
-        "color": null
+        "number": 1,
+        "color": "yellow"
     },
     {
         "number": null,

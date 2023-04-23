@@ -34,6 +34,7 @@
 .tile-bg {
   background-image: url("/images/tile.png");
   background-size: cover;
+  z-index: 1;
 }
 
 .highlight {
@@ -57,18 +58,9 @@
   @apply flex w-14 h-20 border-dashed border-1 border-indigo-600;
 }
 
-// .tile:hover {
-//   transform: scale(1.1);
-//   transition: transform 0.1s ease-in-out;
-// }
 
-// .tile:active {
-//   transform: scale(0.9);
-//   transition: transform 0.1s ease-in-out;
-// }
 
 .tile-style {
-  @apply tile-bg border-1 border-gray-500 rounded-lg w-14 h-20 flex flex-col items-center justify-center z-999;
+  @apply tile-bg border-1 border-gray-500 rounded-lg w-14 h-20 flex flex-col items-center justify-center z-3;
 }
-
 

@@ -24,10 +24,6 @@
         "color": null
     },
     {
-        "number": 9,
-        "color": "black"
-    },
-    {
         "number": 10,
         "color": "black"
     },
@@ -36,24 +32,24 @@
         "color": "black"
     },
     {
-        "number": 12,
+        "number": 9,
         "color": "black"
     },
     {
-        "number": null,
-        "color": null
+        "number": 12,
+        "color": "black"
     },
     {
         "number": 13,
         "color": "black"
     },
     {
-        "number": 1,
-        "color": "black"
-    },
-    {
         "number": null,
         "color": null
+    },
+    {
+        "number": 1,
+        "color": "black"
     },
     {
         "number": 2,
@@ -62,6 +58,10 @@
     {
         "number": 3,
         "color": "black"
+    },
+    {
+        "number": null,
+        "color": null
     },
     {
         "number": 6,
@@ -76,44 +76,44 @@
         "color": "blue"
     },
     {
-        "number": 10,
-        "color": "red"
-    },
-    {
-        "number": 13,
-        "color": "blue"
-    },
-    {
-        "number": 12,
-        "color": "red"
-    },
-    {
-        "number": 11,
-        "color": "blue"
+        "number": null,
+        "color": null
     },
     {
         "number": 1,
         "color": "black"
     },
     {
-        "number": null,
-        "color": null
+        "number": 10,
+        "color": "red"
+    },
+    {
+        "number": 11,
+        "color": "red"
+    },
+    {
+        "number": 12,
+        "color": "red"
+    },
+    {
+        "number": 13,
+        "color": "red"
     },
     {
         "number": null,
         "color": null
     },
     {
-        "number": null,
-        "color": null
+        "number": 1,
+        "color": "blue"
     },
     {
-        "number": null,
-        "color": null
+        "number": 1,
+        "color": "red"
     },
     {
-        "number": null,
-        "color": null
+        "number": 1,
+        "color": "orange"
     },
     {
         "number": null,
