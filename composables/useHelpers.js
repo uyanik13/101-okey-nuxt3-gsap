@@ -12,8 +12,25 @@ export const useHelpers = () => {
     }
   });
 
+  const getFirstEmptyNearTileIndex = (playerTiles, targetIndex = 0, condition = '>') => playerTiles.findIndex((item, index) => {
+    if (condition == '>') {
+      return index > 15 && index > targetIndex && item.number == null;
+    } else {
+      return index < 15 && index > targetIndex && item.number == null;
+    }
+  });
 
-  const getLastEmptyTileIndex = (playerTiles, condition = '>') => {
+  const getFindEmptTilesBetweenTargetAndTile = (playerTiles, targetIndex = null, tileIndex = null) => {
+      return playerTiles.filter((tile, index)=>{
+          if (index > targetIndex && index < tileIndex || index < targetIndex && index > tileIndex ){
+            return tile.number == null
+          }
+      })
+  } 
+
+
+
+  const getLastEmptyTileIndex = (playerTiles, condition = '>',) => {
     let filteredArr = null
     if(condition == '>'){
       filteredArr = playerTiles.filter((tile, index) => index > 15 && tile.number == null);
@@ -32,5 +49,7 @@ export const useHelpers = () => {
   return {
     getFirstEmptyTileIndex,
     getLastEmptyTileIndex,
+    getFirstEmptyNearTileIndex,
+    getFindEmptTilesBetweenTargetAndTile
   };
 };

@@ -1,6 +1,10 @@
 [
     {
-        "number": 4,
+        "number": null,
+        "color": null
+    },
+    {
+        "number": 3,
         "color": "black"
     },
     {
@@ -12,88 +16,84 @@
         "color": "black"
     },
     {
-        "number": 7,
-        "color": "black"
+        "number": null,
+        "color": null
     },
     {
         "number": 8,
         "color": "black"
     },
     {
-        "number": null,
-        "color": null
+        "number": 4,
+        "color": "black"
     },
     {
-        "number": 9,
-        "color": "black"
+        "number": null,
+        "color": null
     },
     {
         "number": 10,
-        "color": "black"
-    },
-    {
-        "number": 11,
-        "color": "black"
-    },
-    {
-        "number": 12,
-        "color": "black"
-    },
-    {
-        "number": null,
-        "color": null
-    },
-    {
-        "number": 13,
-        "color": "black"
-    },
-    {
-        "number": 1,
-        "color": "black"
-    },
-    {
-        "number": null,
-        "color": null
-    },
-    {
-        "number": 2,
-        "color": "black"
-    },
-    {
-        "number": 3,
-        "color": "black"
-    },
-    {
-        "number": 6,
-        "color": "blue"
+        "color": "red"
     },
     {
         "number": 7,
-        "color": "blue"
-    },
-    {
-        "number": 8,
-        "color": "blue"
-    },
-    {
-        "number": 10,
-        "color": "red"
-    },
-    {
-        "number": 13,
-        "color": "blue"
-    },
-    {
-        "number": 12,
-        "color": "red"
+        "color": "black"
     },
     {
         "number": 11,
-        "color": "blue"
+        "color": "red"
     },
     {
-        "number": 1,
-        "color": "black"
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
+    },
+    {
+        "number": null,
+        "color": null
     },
     {
         "number": null,

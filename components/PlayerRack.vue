@@ -50,13 +50,18 @@
 </template>
 <script setup>
 import { ref, watch, onMounted } from "vue";
-import tiles from "@/assets/fixtures/tiles.json";
+import tiles from "@/assets/fixtures/tiles-test.json";
 import Tile from "@/components/Tile.vue";
 import { useHelpers } from "~~/composables/useHelpers.js";
 const { $gsap: gsap, $Draggable: Draggable } = useNuxtApp();
-const { getFirstEmptyTileIndex, getLastEmptyTileIndex } = useHelpers();
+const {
+  getFirstEmptyTileIndex,
+  getLastEmptyTileIndex,
+  getFirstEmptyNearTileIndex,
+  getFindEmptTilesBetweenTargetAndTile,
+} = useHelpers();
 
-const playerTiles = ref([...tiles]);
+const playerTiles = ref(tiles);
 
 const highlightedTarget = ref(null);
 const tilesRef = ref(null);
@@ -155,20 +160,35 @@ const changePosition = (tile, target) => {
       } else {
         //IF TILE MOVED IN UP SECTION BETWEEN TILES 2-3 | 3-2
 
-        console.log(firstEmptyTileIndex)
-        
-        if (firstEmptyTileIndex) {
-          //integrate deleting empty from left or right
-          console.log("2 -1 ");
-          //playerTiles.value.splice(firstEmptyTileIndex, 1); //REMOVE EMPTY FROM UP
-          playerTiles.value.splice(targetIndex, 0, movedElement);
-          playerTiles.value.splice(tileIndex, 1);
-          playerTiles.value.splice(tileIndex, 0, { number: null, color: null });
-        } else {
-          console.log("2 -2 ");
+        const emptyTiles = getFindEmptTilesBetweenTargetAndTile(playerTiles.value, targetIndex, tileIndex)
+
+        if(emptyTiles.length){
+          const firstNearEmptyTileIndex = getFirstEmptyNearTileIndex(
+            playerTiles.value,
+            targetIndex,
+            "<"
+          );
+
+          if (firstNearEmptyTileIndex && firstNearEmptyTileIndex !== -1) {
+            //integrate deleting empty from left or right
+            console.log("2 -2 ");
+            console.log("firstNearEmptyTileIndex", firstNearEmptyTileIndex);
+            playerTiles.value.splice(firstNearEmptyTileIndex, 1); //REMOVE EMPTY FROM UP
+            playerTiles.value.splice(targetIndex, 0, movedElement); //REMOVE target tile and drop tile
+            playerTiles.value.splice(tileIndex, 1, {
+              number: null,
+              color: null,
+            });
+          }
+        }else{
+          console.log("2 -3 ");
           playerTiles.value.splice(tileIndex, 1);
           playerTiles.value.splice(targetIndex, 0, movedElement);
         }
+
+        //console.log("2 -4 ");
+
+       
       }
     } else {
       //THAT SECTION IS FINE
@@ -209,7 +229,7 @@ const changePosition = (tile, target) => {
   }
 
   // console.log("PLAYER_TILES", playerTiles.value);
-    console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
+  console.log("PLAYER_TILES_COUNT", playerTiles.value.length);
 };
 
 // watch(playerTiles.value, (newValue, oldValue) => {
