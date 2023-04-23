@@ -99,17 +99,30 @@ export const useHelpers = () => {
       const tile = tiles[i];
       if (tile.number === null) {
         emptyTiles.push(i)
+      } else if (i === 15 && tile.number !== null) {
+        emptyTiles.push(16)
       }
+      if (i === 31 && tile.number !== null) {
+        emptyTiles.push(32)
+      }
+
     }
+
 
     for (let i = 0; i < emptyTiles.length; i++) {
       const endIndex = emptyTiles[i];
       const group = tiles.slice(startIndex, endIndex);
-      if(group.length && isValidGroup(group)){
+
+      if (group.length && isValidGroup(group)) {
         validTileGroups.push(group);
-        groupSums.push(group.reduce((acc, tile) => acc + tile.number, 0)); 
+        groupSums.push(group.reduce((acc, tile) => acc + tile.number, 0));
       }
-      startIndex = emptyTiles[i] + 1
+      if (endIndex === 16) {
+        startIndex = 16
+      } else {
+        startIndex = emptyTiles[i] + 1
+      }
+
     }
 
     let totalSum = groupSums.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
