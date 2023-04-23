@@ -24,15 +24,15 @@
         "color": null
     },
     {
+        "number": 9,
+        "color": "black"
+    },
+    {
         "number": 10,
         "color": "black"
     },
     {
         "number": 11,
-        "color": "black"
-    },
-    {
-        "number": 9,
         "color": "black"
     },
     {
@@ -80,10 +80,6 @@
         "color": null
     },
     {
-        "number": 1,
-        "color": "black"
-    },
-    {
         "number": 10,
         "color": "red"
     },
@@ -102,6 +98,10 @@
     {
         "number": null,
         "color": null
+    },
+    {
+        "number": 1,
+        "color": "black"
     },
     {
         "number": 1,

@@ -65,8 +65,11 @@
       <div class="tile-left-top">
         <Tile :number="8" :color="'red'" />
       </div>
-      <div class="tile-left-top">
-        <Tile :number="8" :color="'red'" />
+      <div class="tile-right-top">
+        <div ref="rightTileDropArea" class="relative w-14 h-20 inner-shadow rounded-lg">
+          <div class="absolute inset-0 opacity-75 bg-gray-800 rounded-lg "></div>
+          <div class="relative z-10 bg-white rounded-lg shadow"></div>
+        </div>
       </div>
     </div>
 
@@ -85,24 +88,29 @@
         </div>
       </div>
       <div class="rack-width">
-        <PlayerRack @updateOddSum="updateOddSum" :playerName="'Ogur'" :tiles="playersTiles[0]" />
+        <PlayerRack
+          @updateOddSum="updateOddSum"
+          :playerName="'Ogur'"
+          :tiles="playersTiles[0]"
+        />
       </div>
     </div>
   </div>
 </template>
   <script setup>
 import HorizontalPlayer from "~~/components/HorizontalPlayer.vue";
-
+const { $gsap: gsap, $Draggable: Draggable } = useNuxtApp();
 const colors = ["red", "blue", "black", "orange"];
 const maxNumber = 13;
 const numPlayers = 1;
 const tilesPerPlayer = 21;
 
+const rightTileDropArea = ref(null);
 const oddSum = ref(0);
 
 const updateOddSum = (data) => {
-  oddSum.value = data
-}
+  oddSum.value = data;
+};
 
 function createTileSet(colors, maxNumber) {
   let tiles = [];
@@ -139,6 +147,20 @@ function dealTiles(tiles, numPlayers, tilesPerPlayer) {
 
 const tiles = createTileSet(colors, maxNumber);
 const playersTiles = dealTiles(tiles, numPlayers, tilesPerPlayer);
+
+const onDragEnd = (event) => {
+  console.log(event);
+};
+
+onMounted(() => {
+  Draggable.create(rightTileDropArea.value, {
+      bounds: rightTileDropArea.value,
+      type: "x,y",
+      dragResistance: 0,
+      activeCursor: "grabbing",
+      onDragEnd: onDragEnd.bind(this),
+    });
+});
 </script>
   
   <style>

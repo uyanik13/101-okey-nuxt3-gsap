@@ -105,14 +105,12 @@ const onDragEnd = (tile, event) => {
       //clearProps: "transform",
       zIndex: 1000,
     });
-  }else{
-      gsap.set(tile, {
+  } else {
+    gsap.set(tile, {
       clearProps: "transform",
       zIndex: 1000,
     });
   }
- 
- 
 
   removeCustoms(tile);
 };
@@ -176,17 +174,19 @@ const changePosition = (tile, target) => {
 
 const calculateOddTiles = () => {
   let calculatedTiles = getOddTiles(playerTiles.value);
-    emit("updateOddSum", calculatedTiles.totalSum);
-}
+  emit("updateOddSum", calculatedTiles.totalSum);
+};
 
 watch(playerTiles.value, (newValue, oldValue) => {
   if (newValue) {
-      calculateOddTiles()
+    calculateOddTiles();
   }
 });
 
 onMounted(() => {
-  tileDivs.value = tilesRef.value.querySelectorAll(".tile");
+//let tileRightBottomArea = document.querySelector(".game-area, .tile-right-top");
+tileDivs.value = tilesRef.value.querySelectorAll(".tile")
+//tileDivs.value = [...tilesRef.value.querySelectorAll(".tile"), tileRightBottomArea];
   tileDivs.value.forEach((tile) => {
     Draggable.create(tile, {
       bounds: ".game-area",
@@ -199,7 +199,7 @@ onMounted(() => {
       onRelease: onRelease.bind(this, tile),
     });
   });
-  calculateOddTiles()
+  calculateOddTiles();
 });
 </script>
 
