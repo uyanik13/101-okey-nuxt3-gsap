@@ -1,150 +1,224 @@
-import {
-  useNuxtApp
-} from '#app';
-
 export const useHelpers = () => {
+  const ROW_SIZE = 16;
+  const RACK_SIZE = 32;
+  const EMPTY = { number: null, color: null };
 
-  const {
-    $gsap: gsap,
-    $Draggable: Draggable
-  } = useNuxtApp();
-
-  const getNearEmptyIndex = (playerTiles, targetIndex, tileIndex = null) => {
-    let nearestIndex = -1;
-    let nearestDistance = Infinity;
-
-    if (!findEmptyTileBetween(playerTiles, tileIndex, targetIndex)) return null;
-
-    for (let i = 0; i < playerTiles.length; i++) {
-      if (playerTiles[i].number === null) {
-        const distance = Math.abs(targetIndex - i);
-
-        if (distance < nearestDistance) {
-          nearestIndex = i;
-          nearestDistance = distance;
-        }
-      }
-    }
-
-    return nearestIndex === -1 ? null : nearestIndex;
+  // --- Validation helpers ---
+  const isSameNumberDifferentColors = (group) => {
+    if (group.length < 3 || group.length > 4) return false;
+    const sameNumber = group[0].number;
+    const colors = group.map(t => t.color);
+    const uniqueColors = new Set(colors);
+    return group.every(t => t.number === sameNumber) && uniqueColors.size === group.length;
   };
 
-  const findEmptyTileBetween = (playerTiles, tileIndex, targetIndex) => {
-    if (targetIndex > tileIndex) {
-      for (let i = tileIndex; i < targetIndex; i++) {
-        if (playerTiles[i].number === null) {
-          return true;
-        }
-      }
-    } else {
-      for (let i = targetIndex; i < tileIndex && i < playerTiles.length; i++) {
-        if (playerTiles[i].number === null) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  const animateTileSwap = (fromIndex, toIndex, tiles) => {
-    const fromTile = tiles[fromIndex];
-    const toTile = tiles[toIndex];
-
-    const fromRect = fromTile.getBoundingClientRect();
-    const toRect = toTile.getBoundingClientRect();
-
-    const deltaX = toRect.left - fromRect.left;
-
-    const duration = 0.1;
-
-    gsap.to(fromTile, {
-      x: deltaX,
-      duration,
-      rotation: 0,
-      ease: "SlowMo",
-      clearProps: 'transform'
+  const isConsecutiveRun = (group) => {
+    if (group.length < 3) return false;
+    const firstColor = group[0].color;
+    return group.every((tile, idx, arr) => {
+      if (idx === 0) return true;
+      return tile.color === firstColor && tile.number === arr[idx - 1].number + 1;
     });
   };
 
+  const isValidGroup = (group) => {
+    if (group.length < 3) return false;
+    return isConsecutiveRun(group) || isSameNumberDifferentColors(group);
+  };
+
+  // --- Odd tiles scoring ---
   const getOddTiles = (tiles) => {
-    let validTileGroups = [];
-    let groupSums = [];
-    let emptyTiles = []
-    let startIndex = 0;
+    const validTileGroups = [];
+    const groupSums = [];
 
-    const isSameNumberDifferentColors = (group) => {
-      if (group.length < 3) return false;
-      const sameNumber = group[0].number;
-      return group.every(tile => tile.number === sameNumber);
-    };
+    for (let row = 0; row < 2; row++) {
+      const rowStart = row * ROW_SIZE;
+      const rowEnd = Math.min(rowStart + ROW_SIZE, tiles.length);
+      const rowTiles = tiles.slice(rowStart, rowEnd);
 
-    const isValidGroup = (group) => {
-      if (group.length < 3) return false;
-
-      const isConsecutive = group.every((tile, idx, arr) => idx === 0 || (tile.color === arr[idx - 1].color && tile.number === arr[idx - 1].number + 1));
-
-      const hasDifferentColors = group.some((tile, index, arr) => {
-        if (index === 0) return false;
-        return tile.color !== arr[index - 1].color;
-      });
-
-      if (hasDifferentColors) {
-        return isSameNumberDifferentColors(group);
+      let currentGroup = [];
+      for (let i = 0; i < rowTiles.length; i++) {
+        const tile = rowTiles[i];
+        if (tile.number == null) {
+          if (currentGroup.length > 0 && isValidGroup(currentGroup)) {
+            validTileGroups.push([...currentGroup]);
+            groupSums.push(currentGroup.reduce((acc, t) => acc + t.number, 0));
+          }
+          currentGroup = [];
+        } else {
+          currentGroup.push(tile);
+        }
       }
-
-      return isConsecutive;
-    };
-
-    for (let i = 0; i < tiles.length; i++) {
-      const tile = tiles[i];
-      if (tile.number === null) {
-        emptyTiles.push(i)
-      } else if (i === 15 && tile.number !== null) {
-        emptyTiles.push(16)
+      if (currentGroup.length > 0 && isValidGroup(currentGroup)) {
+        validTileGroups.push([...currentGroup]);
+        groupSums.push(currentGroup.reduce((acc, t) => acc + t.number, 0));
       }
-      if (i === 31 && tile.number !== null) {
-        emptyTiles.push(32)
-      }
-
     }
-
-
-    for (let i = 0; i < emptyTiles.length; i++) {
-      const endIndex = emptyTiles[i];
-      const group = tiles.slice(startIndex, endIndex);
-
-      if (group.length && isValidGroup(group)) {
-        validTileGroups.push(group);
-        groupSums.push(group.reduce((acc, tile) => acc + tile.number, 0));
-      }
-      if (endIndex === 16) {
-        startIndex = 16
-      } else {
-        startIndex = emptyTiles[i] + 1
-      }
-
-    }
-
-    let totalSum = groupSums.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
 
     return {
-      'tiles': validTileGroups,
-      'totalSum': totalSum
+      tiles: validTileGroups,
+      totalSum: groupSums.reduce((acc, val) => acc + val, 0),
     };
   };
 
+  // --- Sort by RUNS (Seri Diz) ---
+  // Groups tiles by color, then finds consecutive runs (3+), places them in rack with empties between groups
+  const sortByRuns = (tiles) => {
+    const realTiles = tiles.filter(t => t.number != null);
+    const jokers = realTiles.filter(t => t.isJoker);
+    const normalTiles = realTiles.filter(t => !t.isJoker);
 
+    // Group by color
+    const byColor = {};
+    normalTiles.forEach(t => {
+      if (!byColor[t.color]) byColor[t.color] = [];
+      byColor[t.color].push({ ...t });
+    });
 
+    const groups = [];
+    const used = new Set();
 
+    // For each color, find consecutive runs
+    const colorOrder = ['black', 'red', 'blue', 'orange'];
+    colorOrder.forEach(color => {
+      const colorTiles = (byColor[color] || []).sort((a, b) => a.number - b.number);
+      let run = [];
+      for (let i = 0; i < colorTiles.length; i++) {
+        const tile = colorTiles[i];
+        if (run.length === 0) {
+          run.push(tile);
+        } else {
+          const lastNum = run[run.length - 1].number;
+          if (tile.number === lastNum + 1) {
+            run.push(tile);
+          } else if (tile.number === lastNum) {
+            // Duplicate - skip for this run, will be leftover
+            continue;
+          } else {
+            if (run.length >= 3) {
+              groups.push([...run]);
+              run.forEach(t => used.add(`${t.color}-${t.number}-${groups.length}`));
+            }
+            run = [tile];
+          }
+        }
+      }
+      if (run.length >= 3) {
+        groups.push([...run]);
+      }
+    });
 
+    // Collect leftover tiles (not in any run group)
+    const usedInGroups = new Set();
+    groups.forEach(group => {
+      group.forEach(t => {
+        // Mark one instance as used
+        for (let i = 0; i < normalTiles.length; i++) {
+          const key = `${i}`;
+          if (!usedInGroups.has(key) && normalTiles[i].number === t.number && normalTiles[i].color === t.color) {
+            usedInGroups.add(key);
+            break;
+          }
+        }
+      });
+    });
 
+    const leftovers = [];
+    normalTiles.forEach((t, i) => {
+      if (!usedInGroups.has(`${i}`)) {
+        leftovers.push({ ...t });
+      }
+    });
 
+    return buildRackFromGroups(groups, [...jokers, ...leftovers]);
+  };
 
+  // --- Sort by PAIRS/SETS (Çift Diz) ---
+  // Groups tiles by number (same number, different colors), then places them in rack
+  const sortByPairs = (tiles) => {
+    const realTiles = tiles.filter(t => t.number != null);
+    const jokers = realTiles.filter(t => t.isJoker);
+    const normalTiles = realTiles.filter(t => !t.isJoker);
 
+    // Group by number
+    const byNumber = {};
+    normalTiles.forEach(t => {
+      if (!byNumber[t.number]) byNumber[t.number] = [];
+      byNumber[t.number].push({ ...t });
+    });
+
+    const groups = [];
+    const usedInGroups = new Set();
+
+    // For each number, find sets of 3-4 different colors
+    const numbers = Object.keys(byNumber).map(Number).sort((a, b) => a - b);
+    numbers.forEach(num => {
+      const numTiles = byNumber[num];
+      // Get unique colors
+      const uniqueByColor = [];
+      const seenColors = new Set();
+      numTiles.forEach((t, i) => {
+        if (!seenColors.has(t.color)) {
+          seenColors.add(t.color);
+          uniqueByColor.push(t);
+        }
+      });
+
+      if (uniqueByColor.length >= 3) {
+        groups.push([...uniqueByColor]);
+        uniqueByColor.forEach(t => {
+          for (let i = 0; i < normalTiles.length; i++) {
+            const key = `${i}`;
+            if (!usedInGroups.has(key) && normalTiles[i].number === t.number && normalTiles[i].color === t.color) {
+              usedInGroups.add(key);
+              break;
+            }
+          }
+        });
+      }
+    });
+
+    const leftovers = [];
+    normalTiles.forEach((t, i) => {
+      if (!usedInGroups.has(`${i}`)) {
+        leftovers.push({ ...t });
+      }
+    });
+
+    return buildRackFromGroups(groups, [...jokers, ...leftovers]);
+  };
+
+  // Place groups into rack with empties separating them
+  const buildRackFromGroups = (groups, leftovers) => {
+    const result = [];
+
+    groups.forEach((group, idx) => {
+      group.forEach(t => result.push({ ...t }));
+      // Add separator empty between groups
+      if (idx < groups.length - 1 || leftovers.length > 0) {
+        result.push({ ...EMPTY });
+      }
+    });
+
+    // Add leftovers after a gap
+    if (leftovers.length > 0) {
+      // Sort leftovers by number
+      leftovers.sort((a, b) => a.number - b.number);
+      leftovers.forEach(t => result.push({ ...t }));
+    }
+
+    // Pad to RACK_SIZE
+    while (result.length < RACK_SIZE) {
+      result.push({ ...EMPTY });
+    }
+
+    // Truncate if somehow too long
+    return result.slice(0, RACK_SIZE);
+  };
 
   return {
-    getNearEmptyIndex,
-    animateTileSwap,
     getOddTiles,
+    sortByRuns,
+    sortByPairs,
   };
 };

@@ -139,8 +139,5 @@ module.exports = {
           },
       },
   },
-  plugins: [
-    require('tailwindcss/colors'),
-    require('tailwindcss/plugin')
-  ],
+  plugins: [],
 }
